@@ -156,30 +156,32 @@ SELECT
 FROM [dbo].[amazon_cleaned]
 GROUP BY 2;
 
---Rating vs review count coorelation
-with avg_rating_count as (
-    select avg(rating_count) as avg_count from [dbo].[amazon_cleaned]
-) --creates a temporary table with average rating count
-select 
+WITH avg_rc as (
+    SELECT AVG(rating_count) as avg_count FROM [dbo].[amazon_cleaned]
+)
+SELECT 
     CASE 
-        when rating_count > (select avg_count from avg_rating_count) then 'Above Average Reviews'
-        else 'Below Average Reviews'
-    end as review_level,
-    case 
-        when rating > 4.0 then 'high rating'
-        else 'low rating'
-    end as rating_level,
-    count(distinct product_id) as product_count
-from [dbo].[amazon_cleaned]
+        WHEN a.rating_count > ar.avg_count THEN 'High Reviews'
+        ELSE 'Low Reviews'
+    END as review_level,
+    CASE 
+        WHEN a.rating > 4.0 THEN 'High Rating'
+        ELSE 'Low Rating'
+    END as rating_level,
+    COUNT(*) as count
+FROM [dbo].[amazon_cleaned] a
+CROSS JOIN avg_rc ar
 GROUP BY 
     CASE 
-        when rating_count > (select avg_count from avg_rating_count) then 'Above Average Reviews'
-        else 'Below Average Reviews'
-    end,
-    case 
-        when rating > 4.0 then 'high rating'
-        else 'low rating'
-    end
-ORDER BY 3 DESC;
+        WHEN a.rating_count > ar.avg_count THEN 'High Reviews'
+        ELSE 'Low Reviews'
+    END,
+    CASE 
+        WHEN a.rating > 4.0 THEN 'High Rating'
+        ELSE 'Low Rating'
+    END;
+
+
+
 
 
