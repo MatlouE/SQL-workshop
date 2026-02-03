@@ -62,4 +62,37 @@ order by avg_rating desc;
 select round(rating, 1) as rating_level,
     count(DISTINCT product_id) as product_count,
     ROUND(avg(rating_count), 0) as avg_reviews,
-    round()
+    round(avg(discount_percentage), 2) as avg_discount
+from [dbo].[amazon_cleaned]
+group by round(rating, 1)
+order by rating_level desc;
+
+select *
+from [dbo].[amazon_cleaned];
+
+--string functions & Case
+select 
+    substring(product_name, 1, 50) as short_name,
+    LEN(product_name) as name_length,
+    upper(category) as category_upper
+from [dbo].[amazon_cleaned]
+where LEN(product_name) > 50;
+
+-- rating categories
+select
+    COUNT(*) as counts,
+    case 
+        when rating >= 4.5 then 'Excellent'
+        when rating >= 4.0 then 'Very Good'
+        when rating >= 3.5 then 'Good'
+        else 'Below Average (<3.5)'
+    end as rating_category
+from [dbo].[amazon_cleaned]
+group by 
+    case 
+        when rating >= 4.5 then 'Excellent'
+        when rating >= 4.0 then 'Very Good'
+        when rating >= 3.5 then 'Good'
+        else 'Below Average (<3.5)'
+    end
+order by counts ;
