@@ -96,3 +96,64 @@ group by
         else 'Below Average (<3.5)'
     end
 order by counts ;
+
+-- Price segmentation
+select 
+    CASE 
+        WHEN discounted_price < 200 then 'Budget (<₹200)'
+        when discounted_price < 500 then 'Mid-Range (₹200-500)'
+        when discounted_price < 1000 then 'Premium (₹500-1000)'
+        else 'Luxury (₹1000+)'
+    end as price_category,
+    count(*) as product_count,
+    round(avg(rating), 2) as avg_rating,
+    round(avg(discount_percentage), 2) as avg_discount
+from [dbo].[amazon_cleaned]
+GROUP by 
+    CASE 
+        WHEN discounted_price < 200 then 'Budget (<₹200)'
+        when discounted_price < 500 then 'Mid-Range (₹200-500)'
+        when discounted_price < 1000 then 'Premium (₹500-1000)'
+        else 'Luxury (₹1000+)'
+    end
+order by product_count DESC;
+
+
+--subqueries , Above average rating
+select 
+    product_name,
+    rating,
+    discount_percentage,
+    actual_price
+from [dbo].[amazon_cleaned]
+where rating > (select avg(rating) from [dbo].[amazon_cleaned])
+order by rating desc;
+
+
+--Price range 
+select 
+    product_name,
+    discounted_price,
+    actual_price,
+    discount_percentage,
+    rating,
+    rating_count
+from [dbo].[amazon_cleaned]
+where actual_price between 500 and 1000
+order by discount_percentage desc;
+
+
+SELECT 
+    CASE 
+        WHEN rating_count > (SELECT AVG(rating_count) FROM products) THEN 'High Reviews'
+        ELSE 'Low Reviews'
+    END as review_level,
+    CASE 
+        WHEN rating > 4.0 THEN 'High Rating'
+        ELSE 'Low Rating'
+    END as rating_level,
+    COUNT(*) as count
+FROM [dbo].[amazon_cleaned]
+GROUP BY 2;
+
+
