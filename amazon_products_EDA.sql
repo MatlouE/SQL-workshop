@@ -180,6 +180,51 @@ GROUP BY
         WHEN a.rating > 4.0 THEN 'High Rating'
         ELSE 'Low Rating'
     END;
+--Calculations 
+--Saving Amount (bargain)
+
+select 
+    product_name,
+    actual_price,
+    discounted_price,
+    round(actual_price - discounted_price,2) as savings_amount,
+    discount_percentage,
+    rating
+from [dbo].[amazon_cleaned]
+order by savings_amount desc;
+
+-- Rating effiency score
+
+
+--calculates a rating effiency score that measures how high a 
+--a product's rating is relative to how many people have rated it
+--products with high ratings but few reviews get a higher score
+
+SELECT
+    product_name,
+    rating,
+    rating_count,
+    round(rating/(rating_count + 1), 4) as rating_efficiency,
+    category
+FROM [dbo].[amazon_cleaned]
+where rating_count < 100 and rating >= 4.0
+order by rating_efficiency desc;
+
+
+-- ROI Analysis (discount vs rating)
+-- calcuates a discount rating score
+-- basically what is the high rating for high discount products 
+
+SELECT
+    product_name,
+    discount_percentage,
+    rating,
+    round(discount_percentage * rating, 2) as discount_rating_score,
+    category
+FROM [dbo].[amazon_cleaned]
+order by discount_rating_score desc
+
+
 
 
 
