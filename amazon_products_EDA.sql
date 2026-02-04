@@ -1,6 +1,6 @@
 select product_id,
          product_name,
-         category, discounted_price
+         category, discounted_price,
          actual_price, discount_percentage
 from [dbo].[amazon_cleaned]
 
@@ -142,20 +142,7 @@ from [dbo].[amazon_cleaned]
 where actual_price between 500 and 1000
 order by discount_percentage desc;
 
-
-SELECT 
-    CASE 
-        WHEN rating_count > (SELECT AVG(rating_count) FROM products) THEN 'High Reviews'
-        ELSE 'Low Reviews'
-    END as review_level,
-    CASE 
-        WHEN rating > 4.0 THEN 'High Rating'
-        ELSE 'Low Rating'
-    END as rating_level,
-    COUNT(*) as count
-FROM [dbo].[amazon_cleaned]
-GROUP BY 2;
-
+--Rating vs review count coorelation #1
 WITH avg_rc as (
     SELECT AVG(rating_count) as avg_count FROM [dbo].[amazon_cleaned]
 )
@@ -180,8 +167,10 @@ GROUP BY
         WHEN a.rating > 4.0 THEN 'High Rating'
         ELSE 'Low Rating'
     END;
+
+
 --Calculations 
---Saving Amount (bargain)
+--What is Saving Amount the (bargain)
 
 select 
     product_name,
@@ -223,10 +212,91 @@ SELECT
     category
 FROM [dbo].[amazon_cleaned]
 order by discount_rating_score desc
+;
 
+--Category summary
+select  category,
+    count(*) as total,
+    round(avg(rating), 2) as avg_rating,
+    round(avg(discount_percentage), 2) as avg_discount,
+    round(avg(actual_price), 2) as avg_price,
+    round(avg(rating_count), 0) as avg_reviews
+from [dbo].[amazon_cleaned]
+GROUP BY category
+order by total desc;
 
+--Top Products with a  30% discount
+select top 5
+    product_name,
+    category,
+    rating,
+    rating_count,
+    discount_percentage,
+    actual_price,
+    discounted_price
+from [dbo].[amazon_cleaned]
+where rating >= 4.5 and discount_percentage > 30
+ORDER BY rating_count DESC;
 
+--Market analysis
 
+select
+    case
+        when discount_percentage < 30 then 'Low Discount'
+        when discount_percentage < 60 then 'Medium Discount'
+        else 'High Discount'
+    end as discount_level,
+    case
+        when rating >= 4.3 then 'Premium Quality'
+        else 'Standard Quality'
+    end as quality_level,
+    count(*) as product_count,
+    round(AVG(actual_price), 2) as avg_price
+from [dbo].[amazon_cleaned]
+GROUP BY 
+    case
+        when discount_percentage < 30 then 'Low Discount'
+        when discount_percentage < 60 then 'Medium Discount'
+        else 'High Discount'
+    end ,
+    case
+        when rating >= 4.3 then 'Premium Quality'
+        else 'Standard Quality'
+    end 
+ORDER BY product_count;
 
+select top 5 *
+from [dbo].[amazon_cleaned]
+;
+--User Behavior analysis
+select
+    user_name,
+    count(*) as reviews_written,
+    count(DISTINCT product_id) as products_reviewed,
+    round(avg(rating), 2) as avg_rating_given,
+    case
+        when count(*) > 50 then 'Prolific Reviewer'
+        when count(*) > 20 then 'Active Reviewer'
+        else 'Casual Reviewer'
+    end as reviewer_type
+from [dbo].[amazon_cleaned]
+group by user_name
+having count(*) > 5 --only users that more then 5 reviews
+order by reviews_written desc;
 
+--Price-Quality relationship
 
+select 
+    CASE
+        WHEN actual_price <= 200 THEN '0-200'
+        WHEN actual_price <= 500 THEN '201-500'
+        WHEN actual_price <= 1000 THEN '501-1000'
+        WHEN actual_price <= 5000 THEN '1001-5000'
+        ELSE '5000+'
+    end as price_bucket,
+    count(*) as product_count,
+    round(avg(rating), 2) as avg_rating,
+    round(avg(discount_percentage), 2) as avg_discount
+from products
+group by price_bucket
+order by CAST(substr(price_bucket, 1, INSRT(price_bucket, '-')-1) as integer)
